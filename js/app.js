@@ -13,7 +13,7 @@ const app = {
     async loadModels() {
         try {
             ui.showToast("Loading AI Models...", "warning");
-            await faceapi.nets.ssdMobilenetv1.loadFromUri('./models');
+            await faceapi.nets.tinyFaceDetector.loadFromUri('./models');
             await faceapi.nets.faceLandmark68Net.loadFromUri('./models');
             await faceapi.nets.faceRecognitionNet.loadFromUri('./models');
             this.modelsLoaded = true;
@@ -81,7 +81,7 @@ const app = {
         const video = document.getElementById('reg-video');
         if (!video.srcObject) return;
 
-        const detection = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
+        const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
         if (!detection) return ui.showToast("No face detected! Please look at the camera.", "error");
 
         const canvas = document.getElementById('reg-canvas');
@@ -151,7 +151,7 @@ const app = {
             const displaySize = { width: video.videoWidth, height: video.videoHeight };
             faceapi.matchDimensions(canvas, displaySize);
 
-            const detection = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
+            const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
             
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height); // clear previous drawings
@@ -201,12 +201,20 @@ const app = {
                 msg.innerText = "Scanning for Faces...";
                 dot.className = "status-dot";
             }
-        }, 800); // Check every ~800ms
+        }, 1000); // Check every 1000ms for better performance
     },
 
     stopScanner() {
-        clearInterval(this.timer);
+        if (this.timer) clearInterval(this.timer);
         this.stopCamera('scan');
+        // Clear canvas
+        const canvas = document.getElementById('scan-canvas');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        const overlay = document.getElementById('scan-overlay');
+        if (overlay) overlay.className = 'overlay-scan';
     },
 
     processAttendance(id) {
@@ -236,9 +244,36 @@ const app = {
         }
     },
 
-    // --- Export Logic ---
     exportData(format) {
         if (DB.logs.length === 0) return ui.showToast("No data to export", "error");
+
+        if (format === 'pdf') {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFontSize(18);
+            doc.text("Biometric Attendance Report", 14, 22);
+            doc.setFontSize(11);
+            doc.setTextColor(100);
+            doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30);
+
+            const tableData = DB.logs.map(l => {
+                const d = new Date(l.timestamp);
+                return [d.toLocaleDateString(), d.toLocaleTimeString(), l.studentId, l.name, l.email];
+            });
+
+            doc.autoTable({
+                startY: 40,
+                head: [['Date', 'Time', 'Student ID', 'Name', 'Email']],
+                body: tableData,
+                theme: 'grid',
+                headStyles: { fillColor: [14, 165, 233] },
+            });
+
+            doc.save(`attendance_report_${new Date().toISOString().slice(0,10)}.pdf`);
+            ui.showToast("PDF Downloaded successfully!");
+            return;
+        }
 
         let csv = "Date,Time,ID,Name,Email\n";
         DB.logs.forEach(l => {

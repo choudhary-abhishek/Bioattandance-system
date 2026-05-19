@@ -1,4 +1,6 @@
 const ui = {
+    chartInstance: null,
+
     init() {
         this.updateClock();
         setInterval(() => this.updateClock(), 1000);
@@ -46,9 +48,60 @@ const ui = {
                     <td>${time}</td>
                     <td>${log.studentId}</td>
                     <td>${log.name}</td>
-                    <td><span style="color:var(--accent)">● Present</span></td>
+                    <td><span class="badge" style="color:var(--success); border-color:var(--success); background:rgba(16,185,129,0.1)">● Present</span></td>
                 </tr>`;
         });
+
+        this.updateChart();
+    },
+
+    updateChart() {
+        if (!window.Chart) return; // Wait for CDN
+        const ctx = document.getElementById('attendanceChart').getContext('2d');
+        
+        // Generate last 7 days data
+        const labels = [];
+        const data = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            labels.push(d.toLocaleDateString([], { weekday: 'short' }));
+            
+            // Count logs for this day
+            const dateStr = d.toISOString().split('T')[0];
+            const count = DB.logs.filter(l => l.timestamp.startsWith(dateStr)).length;
+            data.push(count);
+        }
+
+        if (this.chartInstance) {
+            this.chartInstance.data.datasets[0].data = data;
+            this.chartInstance.update();
+        } else {
+            this.chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Attendance',
+                        data: data,
+                        borderColor: '#0ea5e9',
+                        backgroundColor: 'rgba(14, 165, 233, 0.2)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { stepSize: 1, color: '#94a3b8' } },
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
+        }
     },
 
     renderHistory() {
@@ -113,7 +166,18 @@ const ui = {
         const container = document.getElementById('toast-container');
         const el = document.createElement('div');
         el.className = `toast ${type}`;
-        el.innerHTML = `<span>${msg}</span> <span style="cursor:pointer;opacity:0.6" onclick="this.parentElement.remove()">×</span>`;
+        
+        let icon = type === 'error' ? '⚠' : type === 'warning' ? '⚠' : '✓';
+        
+        el.innerHTML = `
+            <div style="display:flex; align-items:center; gap:10px; width:100%; justify-content:space-between">
+                <div style="display:flex; align-items:center; gap:8px">
+                    <span style="font-weight:bold; font-size:1.1rem">${icon}</span>
+                    <span>${msg}</span>
+                </div>
+                <span style="cursor:pointer;opacity:0.6;font-size:1.2rem" onclick="this.parentElement.parentElement.remove()">×</span>
+            </div>
+        `;
         container.appendChild(el);
         setTimeout(() => el.remove(), 4000);
     }

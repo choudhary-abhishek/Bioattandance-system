@@ -5,7 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BioAttend | Secure Biometric System</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 </head>
 
 <body>
@@ -97,6 +106,16 @@
                         <h3>Absent Today</h3>
                         <div class="value" id="stat-absent-today">0</div>
                         <div class="trend down">Pending</div>
+                    </div>
+                </div>
+                <!-- Advanced Chart Section -->
+                <div class="card mb-20" id="chart-card">
+                    <div class="d-flex justify-between">
+                        <h3>Weekly Attendance Trends</h3>
+                        <span class="badge">Live AI Analytics</span>
+                    </div>
+                    <div style="position: relative; height:250px; width:100%; margin-top: 10px;">
+                        <canvas id="attendanceChart"></canvas>
                     </div>
                 </div>
                 <div class="card">
@@ -206,7 +225,7 @@
                     <p style="color:var(--text-muted); margin-bottom:30px">Generate system reports for distribution.</p>
                     <div class="d-flex justify-center gap-20">
                         <button class="btn btn-secondary" onclick="app.exportData('csv')">Download CSV</button>
-                        <button class="btn btn-primary" onclick="app.exportData('xlsx')">Download Excel</button>
+                        <button class="btn btn-primary" onclick="app.exportData('pdf')">Download PDF</button>
                     </div>
                 </div>
             </section>
