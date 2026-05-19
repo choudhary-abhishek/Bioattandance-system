@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioAttend | Secure Biometric System</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <div id="app-container">
+        <!-- Sidebar -->
+        <aside>
+            <div class="brand">
+                <svg class="nav-icon" viewBox="0 0 24 24">
+                    <path
+                        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" />
+                </svg>
+                BioAttend
+            </div>
+            <nav>
+                <button class="active" onclick="app.router('dashboard')" id="nav-dashboard">
+                    <svg class="nav-icon" viewBox="0 0 24 24">
+                        <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
+                    </svg>
+                    Dashboard
+                </button>
+                <button onclick="app.router('registration')" id="nav-registration">
+                    <svg class="nav-icon" viewBox="0 0 24 24">
+                        <path
+                            d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                    </svg>
+                    Registration
+                </button>
+                <button onclick="app.router('scanner')" id="nav-scanner">
+                    <svg class="nav-icon" viewBox="0 0 24 24">
+                        <path
+                            d="M9.37 5.51L7.68 3.82c-3.12.37-5.75 2.58-6.54 5.63l1.86.66c.55-2.07 2.23-3.73 4.37-4.6zm8.91 6.29l1.86.66c-.79-3.05-3.42-5.26-6.54-5.63l-1.69 1.69c2.14.87 3.82 2.53 4.37 4.6zm-1.69 7.15l1.69 1.69c3.12-.37 5.75-2.58 6.54-5.63l-1.86-.66c-.55 2.07-2.23 3.73-4.37 4.6zm-8.91-6.29l-1.86-.66c.79 3.05 3.42 5.26 6.54 5.63l1.69-1.69c-2.14-.87-3.82-2.53-4.37-4.6zM12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0 8c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z" />
+                    </svg>
+                    Live Scanner
+                </button>
+                <button onclick="app.router('history')" id="nav-history">
+                    <svg class="nav-icon" viewBox="0 0 24 24">
+                        <path
+                            d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z" />
+                    </svg>
+                    History
+                </button>
+                <button onclick="app.router('export')" id="nav-export">
+                    <svg class="nav-icon" viewBox="0 0 24 24">
+                        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
+                    </svg>
+                    Export
+                </button>
+                <button onclick="app.router('manage')" id="nav-manage">
+                    <svg class="nav-icon" viewBox="0 0 24 24">
+                        <path
+                            d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+                    </svg>
+                    Manage
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="theme-toggle" onclick="ui.toggleTheme()">
+                    <span id="theme-icon">☀</span>
+                    <span id="theme-text">Light Mode</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main>
+            <header>
+                <h1 id="page-title">Dashboard</h1>
+                <div id="current-time" class="clock-display">--:--:--</div>
+            </header>
+
+            <!-- VIEWS -->
+
+            <!-- 1. Dashboard -->
+            <section id="dashboard" class="view-section active">
+                <div class="stats-grid">
+                    <div class="card">
+                        <h3>Total Students</h3>
+                        <div class="value" id="stat-total-students">0</div>
+                        <div class="trend">Registered Profiles</div>
+                    </div>
+                    <div class="card">
+                        <h3>Present Today</h3>
+                        <div class="value" id="stat-present-today">0</div>
+                        <div class="trend up"><span id="stat-attendance-rate">0%</span> Rate</div>
+                    </div>
+                    <div class="card">
+                        <h3>Absent Today</h3>
+                        <div class="value" id="stat-absent-today">0</div>
+                        <div class="trend down">Pending</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Live Tracking Stream</h3>
+                    <div class="table-container mt-20">
+                        <table id="dashboard-table">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. Registration -->
+            <section id="registration" class="view-section">
+                <div class="card">
+                    <h3>New Biometric Profile</h3>
+                    <div class="form-grid mt-20">
+                        <div class="form-group"><label>Student ID</label><input type="text" id="reg-id"
+                                class="form-control"></div>
+                        <div class="form-group"><label>Full Name</label><input type="text" id="reg-name"
+                                class="form-control"></div>
+                        <div class="form-group full-width"><label>Email</label><input type="email" id="reg-email"
+                                class="form-control"></div>
+                    </div>
+                    <div class="camera-wrapper">
+                        <video id="reg-video" autoplay playsinline muted></video>
+                        <canvas id="reg-canvas" class="hidden"></canvas>
+                    </div>
+                    <div class="d-flex justify-between mt-20">
+                        <div class="preview-gallery" id="reg-previews">
+                            <div class="preview-img">1</div>
+                            <div class="preview-img">2</div>
+                            <div class="preview-img">3</div>
+                        </div>
+                        <div>
+                            <button class="btn btn-secondary" onclick="app.capturePreview()">Capture Sample</button>
+                            <button class="btn btn-primary" onclick="app.registerUser()">Save Profile</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. Scanner -->
+            <section id="scanner" class="view-section">
+                <div class="card scanner-card">
+                    <h3>Optical Scanner</h3>
+                    <p class="sub-text">Anti-Spoofing Protocol Active</p>
+                    <div class="camera-wrapper">
+                        <video id="scan-video" autoplay playsinline muted></video>
+                        <canvas id="scan-canvas"
+                            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10;"></canvas>
+                        <div class="overlay-scan" id="scan-overlay">
+                            <div class="scan-bracket tl"></div>
+                            <div class="scan-bracket tr"></div>
+                            <div class="scan-bracket bl"></div>
+                            <div class="scan-bracket br"></div>
+                        </div>
+                        <div class="scan-status">
+                            <div class="status-dot" id="scan-dot"></div>
+                            <span id="scan-message">Initializing...</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. History -->
+            <section id="history" class="view-section">
+                <div class="card">
+                    <h3>Historical Logs</h3>
+                    <div class="filters mt-20">
+                        <input type="date" id="filter-date" class="form-control">
+                        <input type="text" id="filter-name" class="form-control" placeholder="Name...">
+                        <button class="btn btn-primary" onclick="ui.renderHistory()">Search</button>
+                        <button class="btn btn-secondary" onclick="ui.clearFilters()">Reset</button>
+                    </div>
+                    <div class="table-container">
+                        <table id="history-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. Export -->
+            <section id="export" class="view-section">
+                <div class="card text-center" style="padding: 50px;">
+                    <svg style="width:64px;height:64px;fill:var(--accent);margin-bottom:20px" viewBox="0 0 24 24">
+                        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
+                    </svg>
+                    <h3>Data Export</h3>
+                    <p style="color:var(--text-muted); margin-bottom:30px">Generate system reports for distribution.</p>
+                    <div class="d-flex justify-center gap-20">
+                        <button class="btn btn-secondary" onclick="app.exportData('csv')">Download CSV</button>
+                        <button class="btn btn-primary" onclick="app.exportData('xlsx')">Download Excel</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 6. Manage -->
+            <section id="manage" class="view-section">
+                <div class="card">
+                    <h3>Manage Profiles</h3>
+                    <p class="sub-text">View and delete registered student profiles.</p>
+                    <div class="table-container mt-20">
+                        <table id="manage-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <!-- Load Scripts in Order -->
+    <script src="js/face-api.min.js"></script>
+    <script src="js/db.js"></script>
+    <script src="./js/ui.js"></script>
+    <script src="./js/app.js"></script>
+
+</body>
+
+</html>
