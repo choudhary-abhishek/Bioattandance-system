@@ -8,7 +8,9 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -70,6 +72,13 @@
                     </svg>
                     Manage
                 </button>
+                <button onclick="app.router('settings')" id="nav-settings">
+                    <svg class="nav-icon" viewBox="0 0 24 24">
+                        <path
+                            d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
+                    </svg>
+                    Settings
+                </button>
             </nav>
 
             <div class="sidebar-footer">
@@ -124,6 +133,7 @@
                         <table id="dashboard-table">
                             <thead>
                                 <tr>
+                                    <th>Photo</th>
                                     <th>Time</th>
                                     <th>ID</th>
                                     <th>Name</th>
@@ -142,11 +152,13 @@
                     <h3>New Biometric Profile</h3>
                     <div class="form-grid mt-20">
                         <div class="form-group"><label>Student ID</label><input type="text" id="reg-id"
-                                class="form-control"></div>
+                                class="form-control" placeholder="e.g. STU1001"></div>
                         <div class="form-group"><label>Full Name</label><input type="text" id="reg-name"
-                                class="form-control"></div>
-                        <div class="form-group full-width"><label>Email</label><input type="email" id="reg-email"
-                                class="form-control"></div>
+                                class="form-control" placeholder="e.g. John Doe"></div>
+                        <div class="form-group"><label>Email</label><input type="email" id="reg-email"
+                                class="form-control" placeholder="e.g. john@example.com"></div>
+                        <div class="form-group"><label>Mobile Number</label><input type="tel" id="reg-phone"
+                                class="form-control" placeholder="e.g. +1234567890"></div>
                     </div>
                     <div class="camera-wrapper">
                         <video id="reg-video" autoplay playsinline muted></video>
@@ -154,9 +166,9 @@
                     </div>
                     <div class="d-flex justify-between mt-20">
                         <div class="preview-gallery" id="reg-previews">
-                            <div class="preview-img">1</div>
-                            <div class="preview-img">2</div>
-                            <div class="preview-img">3</div>
+                            <div class="preview-img" data-index="1">1</div>
+                            <div class="preview-img" data-index="2">2</div>
+                            <div class="preview-img" data-index="3">3</div>
                         </div>
                         <div>
                             <button class="btn btn-secondary" onclick="app.capturePreview()">Capture Sample</button>
@@ -181,6 +193,10 @@
                             <div class="scan-bracket bl"></div>
                             <div class="scan-bracket br"></div>
                         </div>
+                        <!-- Liveness Progress Bar -->
+                        <div class="liveness-progress-bar hidden" id="liveness-bar">
+                            <div class="liveness-progress-fill" id="liveness-fill"></div>
+                        </div>
                         <div class="scan-status">
                             <div class="status-dot" id="scan-dot"></div>
                             <span id="scan-message">Initializing...</span>
@@ -203,10 +219,14 @@
                         <table id="history-table">
                             <thead>
                                 <tr>
+                                    <th>Photo</th>
                                     <th>Date</th>
                                     <th>Time</th>
                                     <th>ID</th>
                                     <th>Name</th>
+                                    <th>Status</th>
+                                    <th>Phone</th>
+                                    <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -239,9 +259,11 @@
                         <table id="manage-table">
                             <thead>
                                 <tr>
+                                    <th>Photo</th>
                                     <th>ID</th>
                                     <th>Name</th>
                                     <th>Email</th>
+                                    <th>Phone</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -251,10 +273,116 @@
                 </div>
             </section>
 
+            <!-- 7. Settings -->
+            <section id="settings" class="view-section">
+                <div class="card">
+                    <h3>System Settings</h3>
+                    <p class="sub-text">Configure shifts, liveness detection, and SMS configuration.</p>
+                    <form id="settings-form" onsubmit="event.preventDefault(); app.saveSettings();" class="mt-20">
+                        <div class="settings-grid">
+                            <div class="settings-group">
+                                <label>Class/Shift Start Time</label>
+                                <input type="time" id="settings-start-time" class="form-control">
+                            </div>
+                            <div class="settings-group">
+                                <label>Grace Period (minutes)</label>
+                                <input type="number" id="settings-grace" class="form-control" min="0">
+                            </div>
+                            <div class="settings-group flex-row">
+                                <div class="switch-container">
+                                    <label class="switch-label">Voice Announcement</label>
+                                    <input type="checkbox" id="settings-voice" class="form-switch">
+                                </div>
+                            </div>
+                            <div class="settings-group flex-row">
+                                <div class="switch-container">
+                                    <label class="switch-label">Blink Liveness Verification</label>
+                                    <input type="checkbox" id="settings-liveness" class="form-switch">
+                                </div>
+                            </div>
+                            <div class="settings-group flex-row">
+                                <div class="switch-container">
+                                    <label class="switch-label">OTP Verification on Registration</label>
+                                    <input type="checkbox" id="settings-otp-registration" class="form-switch" onchange="ui.toggleOtpTypeFields()">
+                                </div>
+                            </div>
+                            <div class="settings-group" id="settings-otp-method-group">
+                                <label>OTP Verification Method</label>
+                                <select id="settings-otp-method" class="form-control" onchange="ui.toggleOtpTypeFields()">
+                                    <option value="telegram">Telegram Bot</option>
+                                    <option value="dummy">Dummy OTP (123456)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="telegram-settings-wrapper">
+                            <div class="settings-divider mt-20"></div>
+                            <h4 class="mt-20" style="margin-bottom: 10px; color: var(--text-main);">Telegram Bot Settings</h4>
+                            <div class="settings-grid">
+                                <div class="settings-group telegram-field">
+                                    <label>Telegram Bot Token</label>
+                                    <input type="text" id="settings-telegram-token" class="form-control" placeholder="123456789:ABCdef...">
+                                </div>
+                                <div class="settings-group telegram-field">
+                                    <label>Telegram Chat ID</label>
+                                    <input type="text" id="settings-telegram-chatid" class="form-control" placeholder="987654321">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-end mt-20">
+                            <button type="submit" class="btn btn-primary">Save Settings</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
         </main>
     </div>
 
     <div id="toast-container"></div>
+
+    <!-- Student Analytics Modal -->
+    <div id="analytics-modal" class="modal-overlay hidden" onclick="ui.closeAnalyticsModal(event)">
+        <div class="modal-card">
+            <span class="modal-close" onclick="ui.closeAnalyticsModal(event)">×</span>
+            <div id="analytics-modal-content">
+                <!-- Loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- OTP Verification Modal -->
+    <div id="otp-modal" class="modal-overlay hidden" onclick="ui.closeOTPModal(event)">
+        <div class="modal-card otp-card">
+            <span class="modal-close" onclick="ui.closeOTPModal(event)">×</span>
+            <h3>Security Verification</h3>
+            <p class="sub-text" style="margin-top: 10px;">Enter the 6-digit OTP code sent to your phone/Telegram to
+                authorize this registration.</p>
+
+            <div class="otp-inputs">
+                <input type="text" class="otp-digit" maxlength="1" oninput="ui.handleOtpInput(this, 0)"
+                    onkeydown="ui.handleOtpKeydown(event, 0)">
+                <input type="text" class="otp-digit" maxlength="1" oninput="ui.handleOtpInput(this, 1)"
+                    onkeydown="ui.handleOtpKeydown(event, 1)">
+                <input type="text" class="otp-digit" maxlength="1" oninput="ui.handleOtpInput(this, 2)"
+                    onkeydown="ui.handleOtpKeydown(event, 2)">
+                <input type="text" class="otp-digit" maxlength="1" oninput="ui.handleOtpInput(this, 3)"
+                    onkeydown="ui.handleOtpKeydown(event, 3)">
+                <input type="text" class="otp-digit" maxlength="1" oninput="ui.handleOtpInput(this, 4)"
+                    onkeydown="ui.handleOtpKeydown(event, 4)">
+                <input type="text" class="otp-digit" maxlength="1" oninput="ui.handleOtpInput(this, 5)"
+                    onkeydown="ui.handleOtpKeydown(event, 5)">
+            </div>
+
+            <div class="d-flex justify-between mt-20">
+                <button class="btn btn-secondary" onclick="ui.closeOTPModal(event)">Cancel</button>
+                <button class="btn btn-primary" onclick="app.verifyOTP()">Verify OTP</button>
+            </div>
+        </div>
+    </div>
+
+
+
 
     <!-- Load Scripts in Order -->
     <script src="js/face-api.min.js"></script>

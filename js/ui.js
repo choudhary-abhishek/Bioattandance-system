@@ -4,6 +4,7 @@ const ui = {
     init() {
         this.updateClock();
         setInterval(() => this.updateClock(), 1000);
+        this.initSettings();
         this.renderDashboard();
     },
 
@@ -43,12 +44,24 @@ const ui = {
         tbody.innerHTML = '';
         todayLogs.slice(0, 5).forEach(log => {
             const time = new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            const user = DB.users.find(u => u.id === log.studentId);
+            const photoHtml = user && user.photo ? 
+                `<img src="${user.photo}" class="table-avatar" style="cursor:pointer" onclick="ui.showAnalytics('${log.studentId}')">` : 
+                `<div class="table-avatar" style="display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:bold;color:var(--accent);background:rgba(14,165,233,0.1);cursor:pointer" onclick="ui.showAnalytics('${log.studentId}')">${log.name.charAt(0)}</div>`;
+            
+            const statusColor = log.status === 'Late' ? 'var(--warning)' : 'var(--success)';
+            const statusBg = log.status === 'Late' ? 'rgba(245,158,11,0.1)' : 'rgba(16,185,129,0.1)';
+            const statusText = log.status === 'Late' ? '● Late' : '● Present';
+            const badgeHtml = `<span class="badge" style="color:${statusColor}; border-color:${statusColor}; background:${statusBg}">${statusText}</span>`;
+
             tbody.innerHTML += `
                 <tr>
+                    <td>${photoHtml}</td>
                     <td>${time}</td>
-                    <td>${log.studentId}</td>
-                    <td>${log.name}</td>
-                    <td><span class="badge" style="color:var(--success); border-color:var(--success); background:rgba(16,185,129,0.1)">● Present</span></td>
+                    <td style="font-family:var(--font-mono)">${log.studentId}</td>
+                    <td style="font-weight:600; cursor:pointer" onclick="ui.showAnalytics('${log.studentId}')">${log.name}</td>
+                    <td>${badgeHtml}</td>
                 </tr>`;
         });
 
@@ -117,18 +130,35 @@ const ui = {
         tbody.innerHTML = '';
 
         if (logs.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" class="text-center">No records found.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center">No records found.</td></tr>';
             return;
         }
 
         logs.forEach(log => {
             const d = new Date(log.timestamp);
+            const user = DB.users.find(u => u.id === log.studentId);
+            const photoHtml = user && user.photo ? 
+                `<img src="${user.photo}" class="table-avatar" style="cursor:pointer" onclick="ui.showAnalytics('${log.studentId}')">` : 
+                `<div class="table-avatar" style="display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:bold;color:var(--accent);background:rgba(14,165,233,0.1);cursor:pointer" onclick="ui.showAnalytics('${log.studentId}')">${log.name.charAt(0)}</div>`;
+            const phone = log.phone || (user ? user.phone : 'N/A');
+            
+            const statusColor = log.status === 'Late' ? 'var(--warning)' : 'var(--success)';
+            const statusBg = log.status === 'Late' ? 'rgba(245,158,11,0.1)' : 'rgba(16,185,129,0.1)';
+            const statusText = log.status === 'Late' ? '● Late' : '● Present';
+            const badgeHtml = `<span class="badge" style="color:${statusColor}; border-color:${statusColor}; background:${statusBg}">${statusText}</span>`;
+
             tbody.innerHTML += `
                 <tr>
+                    <td>${photoHtml}</td>
                     <td>${d.toLocaleDateString()}</td>
                     <td>${d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
-                    <td>${log.studentId}</td>
-                    <td>${log.name}</td>
+                    <td style="font-family:var(--font-mono)">${log.studentId}</td>
+                    <td style="font-weight:600; cursor:pointer" onclick="ui.showAnalytics('${log.studentId}')">${log.name}</td>
+                    <td>${badgeHtml}</td>
+                    <td style="font-family:var(--font-mono)">${phone}</td>
+                    <td>
+                        <button class="btn btn-secondary" style="color:var(--danger); border-color:var(--danger); padding: 4px 8px; font-size: 0.8rem;" onclick="app.deleteLog('${log.timestamp}', '${log.studentId}')">Delete</button>
+                    </td>
                 </tr>`;
         });
     },
@@ -139,16 +169,22 @@ const ui = {
         tbody.innerHTML = '';
         
         if (DB.users.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" class="text-center">No profiles found.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center">No profiles found.</td></tr>';
             return;
         }
 
         DB.users.forEach(user => {
+            const photoHtml = user.photo ? 
+                `<img src="${user.photo}" class="table-avatar" style="cursor:pointer" onclick="ui.showAnalytics('${user.id}')">` : 
+                `<div class="table-avatar" style="display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:bold;color:var(--accent);background:rgba(14,165,233,0.1);cursor:pointer" onclick="ui.showAnalytics('${user.id}')">${user.name.charAt(0)}</div>`;
+            const phone = user.phone || 'N/A';
             tbody.innerHTML += `
                 <tr>
-                    <td>${user.id}</td>
-                    <td>${user.name}</td>
+                    <td>${photoHtml}</td>
+                    <td style="font-family:var(--font-mono)">${user.id}</td>
+                    <td style="font-weight:600; cursor:pointer" onclick="ui.showAnalytics('${user.id}')">${user.name}</td>
                     <td>${user.email}</td>
+                    <td style="font-family:var(--font-mono)">${phone}</td>
                     <td>
                         <button class="btn btn-secondary" style="color:var(--danger); border-color:var(--danger); padding: 4px 8px; font-size: 0.8rem;" onclick="app.deleteUser('${user.id}')">Delete</button>
                     </td>
@@ -180,5 +216,172 @@ const ui = {
         `;
         container.appendChild(el);
         setTimeout(() => el.remove(), 4000);
+    },
+
+    /* System Settings Page Initializer */
+    initSettings() {
+        const s = DB.settings;
+        document.getElementById('settings-start-time').value = s.startTime || "09:00";
+        document.getElementById('settings-grace').value = s.gracePeriod !== undefined ? s.gracePeriod : 15;
+        document.getElementById('settings-voice').checked = !!s.voiceEnabled;
+        document.getElementById('settings-liveness').checked = !!s.livenessEnabled;
+        document.getElementById('settings-otp-registration').checked = !!s.otpOnRegistration;
+        document.getElementById('settings-otp-method').value = s.otpMethod || "telegram";
+        document.getElementById('settings-telegram-token').value = s.telegramToken || "";
+        document.getElementById('settings-telegram-chatid').value = s.telegramChatId || "";
+        this.toggleOtpTypeFields();
+    },
+
+    toggleOtpTypeFields() {
+        const otpReg = document.getElementById('settings-otp-registration').checked;
+        const otpMethod = document.getElementById('settings-otp-method').value;
+
+        const methodGroup = document.getElementById('settings-otp-method-group');
+        const telegramWrapper = document.getElementById('telegram-settings-wrapper');
+
+        if (otpReg) {
+            methodGroup.classList.remove('hidden');
+            if (otpMethod === 'telegram') {
+                telegramWrapper.classList.remove('hidden');
+            } else {
+                telegramWrapper.classList.add('hidden');
+            }
+        } else {
+            methodGroup.classList.add('hidden');
+            telegramWrapper.classList.add('hidden');
+        }
+    },
+
+    /* Interactive Student Profile Analytics Card modal rendering */
+    showAnalytics(userId) {
+        const user = DB.users.find(u => u.id === userId);
+        if (!user) return;
+        
+        const modal = document.getElementById('analytics-modal');
+        const content = document.getElementById('analytics-modal-content');
+        
+        const userLogs = DB.logs.filter(l => l.studentId === userId);
+        const totalLogs = userLogs.length;
+        
+        const today = new Date().toISOString().split('T')[0];
+        const presents = userLogs.filter(l => l.status !== 'Late').length;
+        const lates = userLogs.filter(l => l.status === 'Late').length;
+        
+        // Calculate attendance rate over active days since registration
+        const regDateStr = user.regDate ? user.regDate.split('T')[0] : today;
+        const regDate = new Date(regDateStr);
+        const systemDays = Math.max(1, Math.ceil((new Date() - regDate) / (1000 * 60 * 60 * 24)));
+        const attendanceRate = Math.round((totalLogs / systemDays) * 100);
+
+        // Generate last 14 days grid
+        let calendarGridHtml = '';
+        for (let i = 13; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const dateStr = d.toISOString().split('T')[0];
+            const logForDay = userLogs.find(l => l.timestamp.startsWith(dateStr));
+            
+            let statusClass = 'absent';
+            let statusText = 'Absent';
+            let label = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+            
+            if (logForDay) {
+                statusClass = logForDay.status === 'Late' ? 'late' : 'present';
+                statusText = logForDay.status === 'Late' ? 'Late Check-in' : 'Present (On-Time)';
+            }
+            
+            calendarGridHtml += `
+                <div class="calendar-cell ${statusClass}">
+                    ${d.getDate()}
+                    <span class="calendar-cell-tooltip">${label}: ${statusText}</span>
+                </div>
+            `;
+        }
+        
+        const avatarHtml = user.photo ? 
+            `<img src="${user.photo}" class="analytics-avatar">` : 
+            `<div class="analytics-avatar" style="display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:bold;color:var(--accent);background:rgba(14,165,233,0.1)">${user.name.charAt(0)}</div>`;
+
+        content.innerHTML = `
+            <div class="analytics-header">
+                ${avatarHtml}
+                <div class="analytics-meta">
+                    <h2>${user.name}</h2>
+                    <p style="font-family:var(--font-mono);font-size:0.8rem">ID: ${user.id} • Registered: ${new Date(user.regDate || Date.now()).toLocaleDateString()}</p>
+                    <p style="margin-top:4px;font-size:0.85rem">Email: ${user.email} • Phone: ${user.phone || 'N/A'}</p>
+                </div>
+            </div>
+            
+            <div class="analytics-stats">
+                <div class="analytics-stat-card">
+                    <h4>Attendance</h4>
+                    <div class="num success">${attendanceRate}%</div>
+                </div>
+                <div class="analytics-stat-card">
+                    <h4>On-Time</h4>
+                    <div class="num">${presents} days</div>
+                </div>
+                <div class="analytics-stat-card">
+                    <h4>Late</h4>
+                    <div class="num warning">${lates} days</div>
+                </div>
+            </div>
+            
+            <div class="calendar-strip">
+                <div class="calendar-title">Last 14 Days Check-in Heatmap</div>
+                <div class="calendar-grid">
+                    ${calendarGridHtml}
+                </div>
+            </div>
+        `;
+        
+        modal.classList.remove('hidden');
+    },
+
+    closeAnalyticsModal(event) {
+        if (!event || event.target === document.getElementById('analytics-modal') || event.target.classList.contains('modal-close')) {
+            document.getElementById('analytics-modal').classList.add('hidden');
+        }
+    },
+
+
+    showOTPModal() {
+        const modal = document.getElementById('otp-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            const inputs = document.querySelectorAll('.otp-digit');
+            inputs.forEach(input => input.value = '');
+            if (inputs[0]) inputs[0].focus();
+        }
+    },
+
+    closeOTPModal(event) {
+        if (!event || event.target === document.getElementById('otp-modal') || event.target.classList.contains('modal-close') || event.target.innerText === 'Cancel') {
+            const modal = document.getElementById('otp-modal');
+            if (modal) modal.classList.add('hidden');
+            app.pendingRegistration = null;
+        }
+    },
+
+    handleOtpInput(element, index) {
+        element.value = element.value.replace(/[^0-9]/g, '');
+        if (element.value && index < 5) {
+            const next = document.querySelectorAll('.otp-digit')[index + 1];
+            if (next) next.focus();
+        }
+        const digits = Array.from(document.querySelectorAll('.otp-digit')).map(input => input.value).join('');
+        if (digits.length === 6) {
+            app.verifyOTP();
+        }
+    },
+
+    handleOtpKeydown(event, index) {
+        if (event.key === 'Backspace' && !event.target.value && index > 0) {
+            const prev = document.querySelectorAll('.otp-digit')[index - 1];
+            if (prev) {
+                prev.focus();
+                prev.value = '';
+            }
+        }
     }
 };

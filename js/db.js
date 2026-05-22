@@ -1,19 +1,38 @@
 const DB = {
     users: [],
     logs: [],
+    settings: {
+        startTime: "09:00",
+        gracePeriod: 15,
+        voiceEnabled: true,
+        livenessEnabled: false,
+        otpOnRegistration: true,
+        otpMethod: "telegram",
+        telegramToken: "",
+        telegramChatId: ""
+    },
 
     init() {
         const u = localStorage.getItem('bio_users');
         const l = localStorage.getItem('bio_logs');
+        const s = localStorage.getItem('bio_settings');
         if (u) this.users = JSON.parse(u);
         if (l) this.logs = JSON.parse(l);
-        
-        // Removed seed data since we need real face descriptors
+        if (s) {
+            this.settings = { ...this.settings, ...JSON.parse(s) };
+        } else {
+            this.saveSettings(this.settings);
+        }
     },
 
     save() {
         localStorage.setItem('bio_users', JSON.stringify(this.users));
         localStorage.setItem('bio_logs', JSON.stringify(this.logs));
+    },
+
+    saveSettings(settingsObj) {
+        this.settings = settingsObj;
+        localStorage.setItem('bio_settings', JSON.stringify(this.settings));
     },
 
     addUser(userObj) {
