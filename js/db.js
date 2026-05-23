@@ -7,9 +7,9 @@ const DB = {
         voiceEnabled: true,
         livenessEnabled: false,
         otpOnRegistration: true,
-        otpMethod: "telegram",
-        telegramToken: "",
-        telegramChatId: ""
+        otpMethod: "email",
+        emailScriptUrl: "",
+        adminEmail: ""
     },
 
     init() {

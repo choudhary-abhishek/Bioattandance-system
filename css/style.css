@@ -603,9 +603,9 @@ tr:hover .table-avatar {
 .flex-row {
     flex-direction: row !important;
 }
-.settings-group.twilio-field.hidden, .settings-group.telegram-field.hidden {
+.settings-group.twilio-field.hidden, .settings-group.email-field.hidden {
     display: none !important;
 }
-.settings-group.twilio-field, .settings-group.telegram-field {
+.settings-group.twilio-field, .settings-group.email-field {
     animation: fadeIn 0.3s ease;
 }

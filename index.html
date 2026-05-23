@@ -309,23 +309,23 @@
                             <div class="settings-group" id="settings-otp-method-group">
                                 <label>OTP Verification Method</label>
                                 <select id="settings-otp-method" class="form-control" onchange="ui.toggleOtpTypeFields()">
-                                    <option value="telegram">Telegram Bot</option>
+                                    <option value="email">Email Service (Google Apps Script)</option>
                                     <option value="dummy">Dummy OTP (123456)</option>
                                 </select>
                             </div>
                         </div>
 
-                        <div id="telegram-settings-wrapper">
+                        <div id="email-settings-wrapper">
                             <div class="settings-divider mt-20"></div>
-                            <h4 class="mt-20" style="margin-bottom: 10px; color: var(--text-main);">Telegram Bot Settings</h4>
+                            <h4 class="mt-20" style="margin-bottom: 10px; color: var(--text-main);">Email Settings (Google Apps Script)</h4>
                             <div class="settings-grid">
-                                <div class="settings-group telegram-field">
-                                    <label>Telegram Bot Token</label>
-                                    <input type="text" id="settings-telegram-token" class="form-control" placeholder="123456789:ABCdef...">
+                                <div class="settings-group email-field full-width">
+                                    <label>Google Apps Script Web App URL</label>
+                                    <input type="text" id="settings-email-script-url" class="form-control" placeholder="https://script.google.com/macros/s/.../exec">
                                 </div>
-                                <div class="settings-group telegram-field">
-                                    <label>Telegram Chat ID</label>
-                                    <input type="text" id="settings-telegram-chatid" class="form-control" placeholder="987654321">
+                                <div class="settings-group email-field full-width">
+                                    <label>Admin Notification Email (Optional)</label>
+                                    <input type="email" id="settings-admin-email" class="form-control" placeholder="admin@example.com (To receive check-in copies)">
                                 </div>
                             </div>
                         </div>
@@ -356,7 +356,7 @@
         <div class="modal-card otp-card">
             <span class="modal-close" onclick="ui.closeOTPModal(event)">×</span>
             <h3>Security Verification</h3>
-            <p class="sub-text" style="margin-top: 10px;">Enter the 6-digit OTP code sent to your phone/Telegram to
+            <p class="sub-text" style="margin-top: 10px;">Enter the 6-digit OTP code sent to your email to
                 authorize this registration.</p>
 
             <div class="otp-inputs">

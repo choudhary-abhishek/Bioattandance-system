@@ -226,9 +226,9 @@ const ui = {
         document.getElementById('settings-voice').checked = !!s.voiceEnabled;
         document.getElementById('settings-liveness').checked = !!s.livenessEnabled;
         document.getElementById('settings-otp-registration').checked = !!s.otpOnRegistration;
-        document.getElementById('settings-otp-method').value = s.otpMethod || "telegram";
-        document.getElementById('settings-telegram-token').value = s.telegramToken || "";
-        document.getElementById('settings-telegram-chatid').value = s.telegramChatId || "";
+        document.getElementById('settings-otp-method').value = s.otpMethod || "email";
+        document.getElementById('settings-email-script-url').value = s.emailScriptUrl || "";
+        document.getElementById('settings-admin-email').value = s.adminEmail || "";
         this.toggleOtpTypeFields();
     },
 
@@ -237,18 +237,18 @@ const ui = {
         const otpMethod = document.getElementById('settings-otp-method').value;
 
         const methodGroup = document.getElementById('settings-otp-method-group');
-        const telegramWrapper = document.getElementById('telegram-settings-wrapper');
+        const emailWrapper = document.getElementById('email-settings-wrapper');
 
         if (otpReg) {
             methodGroup.classList.remove('hidden');
-            if (otpMethod === 'telegram') {
-                telegramWrapper.classList.remove('hidden');
+            if (otpMethod === 'email') {
+                emailWrapper.classList.remove('hidden');
             } else {
-                telegramWrapper.classList.add('hidden');
+                emailWrapper.classList.add('hidden');
             }
         } else {
             methodGroup.classList.add('hidden');
-            telegramWrapper.classList.add('hidden');
+            emailWrapper.classList.add('hidden');
         }
     },
 

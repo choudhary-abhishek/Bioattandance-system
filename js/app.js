@@ -141,36 +141,30 @@ const app = {
 
         if (DB.settings.otpOnRegistration) {
             let otp = "123456";
-            const method = DB.settings.otpMethod || "telegram";
-            const token = DB.settings.telegramToken;
-            const chat = DB.settings.telegramChatId;
+            const method = DB.settings.otpMethod || "email";
+            const scriptUrl = DB.settings.emailScriptUrl;
 
-            if (method === 'telegram' && token && chat) {
+            if (method === 'email' && scriptUrl) {
                 // Generate a random 6-digit code
                 otp = Math.floor(100000 + Math.random() * 900000).toString();
-                ui.showToast("Sending OTP via Telegram...", "warning");
+                ui.showToast("Sending OTP via Email...", "warning");
                 try {
-                    const url = `https://api.telegram.org/bot${token}/sendMessage`;
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            chat_id: chat,
-                            text: `Verification Code: Your BioAttend registration OTP is ${otp}.`
-                        })
-                    });
-                    if (response.ok) {
-                        ui.showToast("OTP sent successfully via Telegram!");
+                    const mailSubject = "BioAttend Registration OTP Verification";
+                    const mailBody = `Hello ${name},\n\nYour 6-digit security OTP code for BioAttend registration is: ${otp}\n\nPlease enter this code to authorize and complete your registration.\n\nThank you,\nBioAttend System`;
+                    
+                    const success = await this.sendEmail(email, mailSubject, mailBody);
+                    if (success) {
+                        ui.showToast("OTP sent successfully to your email!");
                     } else {
-                        ui.showToast("Telegram send failed. Use dummy OTP 123456.", "warning");
+                        ui.showToast("Email send failed. Use dummy OTP 123456.", "warning");
                         otp = "123456";
                     }
                 } catch (e) {
-                    ui.showToast("Telegram error. Use dummy OTP 123456.", "warning");
+                    ui.showToast("Email error. Use dummy OTP 123456.", "warning");
                     otp = "123456";
                 }
-            } else if (method === 'telegram') {
-                ui.showToast("Telegram not configured. Use dummy OTP 123456.", "warning");
+            } else if (method === 'email') {
+                ui.showToast("Email script URL not configured. Use dummy OTP 123456.", "warning");
             } else {
                 ui.showToast("OTP verification required. Use dummy OTP 123456.", "warning");
             }
@@ -219,30 +213,33 @@ const app = {
         ui.renderDashboard();
     },
 
-    async sendSMS(phone, message) {
-        const token = DB.settings.telegramToken;
-        const chat = DB.settings.telegramChatId;
-        if (!token || !chat) {
-            return;
+    async sendEmail(recipient, subject, body) {
+        const scriptUrl = DB.settings.emailScriptUrl;
+        if (!scriptUrl) {
+            return false;
         }
         try {
-            const url = `https://api.telegram.org/bot${token}/sendMessage`;
-            const response = await fetch(url, {
+            const response = await fetch(scriptUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                mode: 'cors',
+                headers: {
+                    'Content-Type': 'text/plain'
+                },
                 body: JSON.stringify({
-                    chat_id: chat,
-                    text: message
+                    to: recipient,
+                    subject: subject,
+                    body: body
                 })
             });
             if (response.ok) {
-                ui.showToast("Telegram notification sent!");
+                return true;
             } else {
-                const err = await response.json();
-                console.error("Telegram send error", err);
+                console.error("Email send failed status:", response.status);
+                return false;
             }
         } catch (e) {
-            console.error("Telegram Exception", e);
+            console.error("Email Exception", e);
+            return false;
         }
     },
 
@@ -483,11 +480,23 @@ const app = {
             window.speechSynthesis.speak(utterance);
         }
 
-        // SMS notification confirmation
+        // Email notification confirmation
         const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const dateString = now.toLocaleDateString();
         const statusText = status === 'Late' ? 'Late Check-in' : 'Present (On-Time)';
-        const msgText = `Hello ${user.name}, your attendance was marked successfully at ${timeString}. Status: ${statusText}.`;
-        this.sendSMS(user.phone || '', msgText);
+        
+        const emailSubject = `Attendance Marked: ${user.name} (${status})`;
+        const emailBody = `Hello ${user.name},\n\nYour attendance has been successfully logged by BioAttend.\n\nDate: ${dateString}\nTime: ${timeString}\nStatus: ${statusText}\nID: ${user.id}\n\nThank you,\nBioAttend System`;
+        
+        // Send email to student
+        if (user.email) {
+            this.sendEmail(user.email, emailSubject, emailBody);
+        }
+        
+        // Send copy to admin if configured
+        if (settings.adminEmail) {
+            this.sendEmail(settings.adminEmail, `[Admin Notification] ${emailSubject}`, emailBody);
+        }
     },
 
     exportData(format) {
@@ -545,8 +554,8 @@ const app = {
         const livenessEnabled = document.getElementById('settings-liveness').checked;
         const otpOnRegistration = document.getElementById('settings-otp-registration').checked;
         const otpMethod = document.getElementById('settings-otp-method').value;
-        const telegramToken = document.getElementById('settings-telegram-token').value.trim();
-        const telegramChatId = document.getElementById('settings-telegram-chatid').value.trim();
+        const emailScriptUrl = document.getElementById('settings-email-script-url').value.trim();
+        const adminEmail = document.getElementById('settings-admin-email').value.trim();
 
         DB.saveSettings({
             startTime,
@@ -555,8 +564,8 @@ const app = {
             livenessEnabled,
             otpOnRegistration,
             otpMethod,
-            telegramToken,
-            telegramChatId
+            emailScriptUrl,
+            adminEmail
         });
 
         ui.showToast("Settings saved successfully!");
