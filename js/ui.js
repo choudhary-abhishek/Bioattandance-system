@@ -6,6 +6,10 @@ const ui = {
         setInterval(() => this.updateClock(), 1000);
         this.initSettings();
         this.renderDashboard();
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = () => this.populateVoices();
+            this.populateVoices();
+        }
     },
 
     updateClock() {
@@ -224,12 +228,140 @@ const ui = {
         document.getElementById('settings-start-time').value = s.startTime || "09:00";
         document.getElementById('settings-grace').value = s.gracePeriod !== undefined ? s.gracePeriod : 15;
         document.getElementById('settings-voice').checked = !!s.voiceEnabled;
-        document.getElementById('settings-liveness').checked = !!s.livenessEnabled;
+        document.getElementById('settings-sound-enabled').checked = !!s.soundEnabled;
+        document.getElementById('settings-sound-type').value = s.soundType || "beep";
+        document.getElementById('settings-voice-rate').value = s.voiceRate !== undefined ? s.voiceRate : 1.0;
+        document.getElementById('settings-voice-rate-val').innerText = s.voiceRate !== undefined ? s.voiceRate : "1.0";
+        document.getElementById('settings-voice-pitch').value = s.voicePitch !== undefined ? s.voicePitch : 1.0;
+        document.getElementById('settings-voice-pitch-val').innerText = s.voicePitch !== undefined ? s.voicePitch : "1.0";
+        document.getElementById('settings-voice-text').value = s.voiceText || "Attendance marked for {name}";
         document.getElementById('settings-otp-registration').checked = !!s.otpOnRegistration;
         document.getElementById('settings-otp-method').value = s.otpMethod || "email";
         document.getElementById('settings-email-script-url').value = s.emailScriptUrl || "";
         document.getElementById('settings-admin-email').value = s.adminEmail || "";
+        
+        this.populateVoices();
+        this.toggleVoiceSettingsFields();
         this.toggleOtpTypeFields();
+    },
+
+    populateVoices() {
+        const select = document.getElementById('settings-voice-select');
+        if (!select || !('speechSynthesis' in window)) return;
+        
+        const voices = window.speechSynthesis.getVoices();
+        const configuredVoice = DB.settings.voiceName;
+        
+        select.innerHTML = '';
+        
+        // Sort: Indian English (en-IN) first, then other English (en), then alphabetical
+        const sortedVoices = [...voices].sort((a, b) => {
+            const aIN = a.lang === 'en-IN' || a.lang.toLowerCase().includes('en-in');
+            const bIN = b.lang === 'en-IN' || b.lang.toLowerCase().includes('en-in');
+            if (aIN && !bIN) return -1;
+            if (!aIN && bIN) return 1;
+            
+            const aEN = a.lang.startsWith('en');
+            const bEN = b.lang.startsWith('en');
+            if (aEN && !bEN) return -1;
+            if (!aEN && bEN) return 1;
+            
+            return a.name.localeCompare(b.name);
+        });
+        
+        sortedVoices.forEach(voice => {
+            const option = document.createElement('option');
+            option.value = voice.name;
+            let displayName = `${voice.name} (${voice.lang})`;
+            if (voice.lang === 'en-IN' || voice.lang.toLowerCase().includes('en-in')) {
+                displayName = `🇮🇳 ${voice.name} (Indian English)`;
+            }
+            option.textContent = displayName;
+            select.appendChild(option);
+        });
+        
+        if (configuredVoice && voices.some(v => v.name === configuredVoice)) {
+            select.value = configuredVoice;
+        } else {
+            const indianVoice = voices.find(v => v.lang === 'en-IN' || v.lang.toLowerCase().includes('en-in'));
+            if (indianVoice) {
+                select.value = indianVoice.name;
+            } else {
+                const enVoice = voices.find(v => v.lang.startsWith('en'));
+                if (enVoice) {
+                    select.value = enVoice.name;
+                } else if (voices.length > 0) {
+                    select.value = voices[0].name;
+                }
+            }
+        }
+    },
+
+    toggleVoiceSettingsFields() {
+        const voiceAnnounce = document.getElementById('settings-voice').checked;
+        const soundEnabled = document.getElementById('settings-sound-enabled').checked;
+        const wrapper = document.getElementById('voice-settings-wrapper');
+        const soundTypeGroup = document.getElementById('sound-type-wrapper');
+        const voiceSelectGroup = document.getElementById('voice-select-wrapper');
+        const voiceRateInput = document.getElementById('settings-voice-rate').closest('.settings-group');
+        const voicePitchInput = document.getElementById('settings-voice-pitch').closest('.settings-group');
+        const voiceTextInput = document.getElementById('settings-voice-text').closest('.settings-group');
+        
+        if (voiceAnnounce || soundEnabled) {
+            wrapper.classList.remove('hidden');
+            
+            if (soundEnabled) {
+                soundTypeGroup.classList.remove('hidden');
+            } else {
+                soundTypeGroup.classList.add('hidden');
+            }
+            
+            if (voiceAnnounce) {
+                voiceSelectGroup.classList.remove('hidden');
+                voiceRateInput.classList.remove('hidden');
+                voicePitchInput.classList.remove('hidden');
+                voiceTextInput.classList.remove('hidden');
+            } else {
+                voiceSelectGroup.classList.add('hidden');
+                voiceRateInput.classList.add('hidden');
+                voicePitchInput.classList.add('hidden');
+                voiceTextInput.classList.add('hidden');
+            }
+        } else {
+            wrapper.classList.add('hidden');
+        }
+    },
+
+    testSoundEffect() {
+        const type = document.getElementById('settings-sound-type').value;
+        app.playAudioEffect(type);
+    },
+
+    testVoiceAnnouncement() {
+        if (!('speechSynthesis' in window)) {
+            this.showToast("Speech synthesis not supported in this browser.", "error");
+            return;
+        }
+        
+        window.speechSynthesis.cancel();
+        
+        const voiceName = document.getElementById('settings-voice-select').value;
+        const rate = parseFloat(document.getElementById('settings-voice-rate').value) || 1.0;
+        const pitch = parseFloat(document.getElementById('settings-voice-pitch').value) || 1.0;
+        let textTemplate = document.getElementById('settings-voice-text').value || "Attendance marked for {name}";
+        const text = textTemplate.replace('{name}', 'Amit Choudhary');
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = rate;
+        utterance.pitch = pitch;
+        
+        const voices = window.speechSynthesis.getVoices();
+        const selectedVoice = voices.find(v => v.name === voiceName);
+        if (selectedVoice) {
+            utterance.voice = selectedVoice;
+        }
+        
+        window.speechSynthesis.speak(utterance);
     },
 
     toggleOtpTypeFields() {

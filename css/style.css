@@ -574,27 +574,7 @@ tr:hover .table-avatar {
     opacity: 1;
 }
 
-/* Liveness prompts and details in camera wrapper */
-.liveness-progress-bar {
-    position: absolute;
-    bottom: 40px;
-    left: 10%;
-    width: 80%;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 2px;
-    overflow: hidden;
-    z-index: 15;
-}
-.liveness-progress-fill {
-    height: 100%;
-    width: 0%;
-    background: var(--accent);
-    transition: width 0.1s linear;
-}
-.liveness-progress-fill.verified {
-    background: var(--success);
-}
+
 
 /* Helper flex layout adjustments */
 .justify-end {

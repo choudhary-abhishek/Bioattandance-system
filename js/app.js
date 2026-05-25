@@ -4,7 +4,7 @@ const app = {
     tempCaptures: [],
     modelsLoaded: false,
     pendingRegistration: null,
-    livenessState: { userId: null, blinkStep: 0, eyeOpenFrames: 0, eyeClosedFrames: 0 },
+    // Liveness checks removed as requested
 
     async init() {
         DB.init();
@@ -244,52 +244,51 @@ const app = {
     },
 
     // --- Scanner & Real Face Matching Logic ---
-    updateLivenessProgress(step) {
-        const bar = document.getElementById('liveness-bar');
-        const fill = document.getElementById('liveness-fill');
-        if (!bar || !fill) return;
-
-        if (step === null) {
-            bar.classList.add('hidden');
-            fill.className = 'liveness-progress-fill';
-            fill.style.width = '0%';
-            return;
+    playAudioEffect(type) {
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            const ctx = new AudioContext();
+            
+            if (type === 'beep') {
+                const playBeep = (freq, start, duration) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, start);
+                    gain.gain.setValueAtTime(0.12, start);
+                    gain.gain.exponentialRampToValueAtTime(0.01, start + duration - 0.02);
+                    osc.start(start);
+                    osc.stop(start + duration);
+                };
+                
+                const now = ctx.currentTime;
+                playBeep(880, now, 0.08); // A5 (880Hz)
+                playBeep(1046.5, now + 0.09, 0.12); // C6 (1046.5Hz)
+            } else if (type === 'chime') {
+                const playChimeTone = (freq, start, duration) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, start);
+                    gain.gain.setValueAtTime(0.1, start);
+                    gain.gain.exponentialRampToValueAtTime(0.001, start + duration - 0.05);
+                    osc.start(start);
+                    osc.stop(start + duration);
+                };
+                
+                const now = ctx.currentTime;
+                playChimeTone(523.25, now, 0.2); // C5
+                playChimeTone(659.25, now + 0.08, 0.2); // E5
+                playChimeTone(783.99, now + 0.16, 0.35); // G5
+            }
+        } catch (e) {
+            console.error("Audio synthesis error", e);
         }
-
-        bar.classList.remove('hidden');
-        if (step === 0) {
-            fill.className = 'liveness-progress-fill';
-            fill.style.width = '33%';
-        } else if (step === 1) {
-            fill.className = 'liveness-progress-fill';
-            fill.style.width = '66%';
-        } else if (step === 2) {
-            fill.className = 'liveness-progress-fill';
-            fill.style.width = '90%';
-        } else if (step === 3) {
-            fill.className = 'liveness-progress-fill verified';
-            fill.style.width = '100%';
-        }
-    },
-
-    checkBlink(landmarks) {
-        if (!landmarks) return 0.3;
-        const positions = landmarks.positions;
-        const dist = (p1, p2) => Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
-
-        // Left eye EAR: landmarks 36-41
-        const leftV1 = dist(positions[37], positions[41]);
-        const leftV2 = dist(positions[38], positions[40]);
-        const leftH = dist(positions[36], positions[39]);
-        const leftEAR = (leftV1 + leftV2) / (2.0 * leftH);
-
-        // Right eye EAR: landmarks 42-47
-        const rightV1 = dist(positions[43], positions[47]);
-        const rightV2 = dist(positions[44], positions[46]);
-        const rightH = dist(positions[42], positions[45]);
-        const rightEAR = (rightV1 + rightV2) / (2.0 * rightH);
-
-        return (leftEAR + rightEAR) / 2.0;
     },
 
     startScanner() {
@@ -303,7 +302,6 @@ const app = {
 
         let lastMatchTime = 0;
 
-        // Ensure canvas matches video dimensions
         video.addEventListener('loadedmetadata', () => {
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
@@ -318,7 +316,7 @@ const app = {
             const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
 
             const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height); // clear previous drawings
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             if (detection) {
                 overlay.className = 'overlay-scan scanning';
@@ -328,10 +326,9 @@ const app = {
 
                 if (DB.users.length > 0) {
                     const labeledDescriptors = DB.users.map(u => new faceapi.LabeledFaceDescriptors(u.id, [new Float32Array(u.descriptor)]));
-                    const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.45); // threshold 0.45
+                    const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.45);
                     const match = faceMatcher.findBestMatch(detection.descriptor);
 
-                    // Retrieve User Name if matched
                     let labelText = match.label;
                     if (match.label !== 'unknown') {
                         const userObj = DB.users.find(u => u.id === match.label);
@@ -343,84 +340,26 @@ const app = {
                     drawBox.draw(canvas);
 
                     if (match.label !== 'unknown') {
-                        // Check if liveness is active
-                        if (DB.settings.livenessEnabled) {
-                            if (this.livenessState.userId !== match.label) {
-                                this.livenessState = {
-                                    userId: match.label,
-                                    blinkStep: 0,
-                                    eyeOpenFrames: 0,
-                                    eyeClosedFrames: 0
-                                };
-                            }
+                        msg.innerText = `Recognized: ${labelText}`;
 
-                            const ear = this.checkBlink(detection.landmarks);
-
-                            if (this.livenessState.blinkStep === 0) {
-                                this.updateLivenessProgress(0);
-                                if (ear > 0.25) {
-                                    this.livenessState.eyeOpenFrames++;
-                                    if (this.livenessState.eyeOpenFrames >= 1) {
-                                        this.livenessState.blinkStep = 1;
-                                    }
-                                }
-                                msg.innerText = `Liveness Verification: Please blink!`;
-                            } else if (this.livenessState.blinkStep === 1) {
-                                this.updateLivenessProgress(1);
-                                if (ear < 0.20) {
-                                    this.livenessState.eyeClosedFrames++;
-                                    if (this.livenessState.eyeClosedFrames >= 1) {
-                                        this.livenessState.blinkStep = 2;
-                                    }
-                                }
-                                msg.innerText = `Liveness: BLINK NOW!`;
-                            } else if (this.livenessState.blinkStep === 2) {
-                                this.updateLivenessProgress(2);
-                                if (ear > 0.25) {
-                                    this.livenessState.blinkStep = 3;
-                                    this.updateLivenessProgress(3);
-                                    msg.innerText = `Blink Verified! marking attendance...`;
-
-                                    const now = Date.now();
-                                    if (now - lastMatchTime > 5000) {
-                                        this.processAttendance(match.label);
-                                        lastMatchTime = now;
-                                    }
-
-                                    this.livenessState = { userId: null, blinkStep: 0, eyeOpenFrames: 0, eyeClosedFrames: 0 };
-                                    setTimeout(() => this.updateLivenessProgress(null), 1000);
-                                } else {
-                                    msg.innerText = `Liveness: Open eyes to finalize!`;
-                                }
-                            }
-                        } else {
-                            this.updateLivenessProgress(null);
-                            msg.innerText = `Recognized: ${labelText}`;
-
-                            // Prevent spamming attendance calls
-                            const now = Date.now();
-                            if (now - lastMatchTime > 5000) {
-                                this.processAttendance(match.label);
-                                lastMatchTime = now;
-                            }
+                        const now = Date.now();
+                        if (now - lastMatchTime > 5000) {
+                            this.processAttendance(match.label);
+                            lastMatchTime = now;
                         }
                     } else {
-                        this.updateLivenessProgress(null);
                         msg.innerText = "Unknown Face";
                         dot.className = "status-dot danger";
                         overlay.className = 'overlay-scan spoof-detected';
                     }
                 } else {
-                    this.updateLivenessProgress(null);
                     msg.innerText = "No registered users";
                     faceapi.draw.drawDetections(canvas, resizedDetection);
                 }
             } else {
-                this.updateLivenessProgress(null);
                 overlay.className = 'overlay-scan';
                 msg.innerText = "Scanning for Faces...";
                 dot.className = "status-dot";
-                this.livenessState = { userId: null, blinkStep: 0, eyeOpenFrames: 0, eyeClosedFrames: 0 };
             }
         }, 1000);
     },
@@ -428,7 +367,6 @@ const app = {
     stopScanner() {
         if (this.timer) clearInterval(this.timer);
         this.stopCamera('scan');
-        this.updateLivenessProgress(null);
         const canvas = document.getElementById('scan-canvas');
         if (canvas) {
             const ctx = canvas.getContext('2d');
@@ -473,10 +411,29 @@ const app = {
         ui.showToast(`✅ Attendance Marked: ${user.name} (${status})`);
         ui.renderDashboard(); // Update stats
 
+        // Sound Feedback
+        if (settings.soundEnabled) {
+            this.playAudioEffect(settings.soundType);
+        }
+
         // Voice Feedback
         if (settings.voiceEnabled && 'speechSynthesis' in window) {
-            const utterance = new SpeechSynthesisUtterance(`Attendance marked for ${user.name}`);
-            utterance.rate = 1.0;
+            window.speechSynthesis.cancel();
+            
+            const template = settings.voiceText || "Attendance marked for {name}";
+            const text = template.replace('{name}', user.name);
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = parseFloat(settings.voiceRate) || 1.0;
+            utterance.pitch = parseFloat(settings.voicePitch) || 1.0;
+            
+            if (settings.voiceName) {
+                const voices = window.speechSynthesis.getVoices();
+                const selectedVoice = voices.find(v => v.name === settings.voiceName);
+                if (selectedVoice) {
+                    utterance.voice = selectedVoice;
+                }
+            }
             window.speechSynthesis.speak(utterance);
         }
 
@@ -551,7 +508,12 @@ const app = {
         const startTime = document.getElementById('settings-start-time').value;
         const gracePeriod = parseInt(document.getElementById('settings-grace').value) || 0;
         const voiceEnabled = document.getElementById('settings-voice').checked;
-        const livenessEnabled = document.getElementById('settings-liveness').checked;
+        const soundEnabled = document.getElementById('settings-sound-enabled').checked;
+        const soundType = document.getElementById('settings-sound-type').value;
+        const voiceName = document.getElementById('settings-voice-select').value;
+        const voiceRate = parseFloat(document.getElementById('settings-voice-rate').value) || 1.0;
+        const voicePitch = parseFloat(document.getElementById('settings-voice-pitch').value) || 1.0;
+        const voiceText = document.getElementById('settings-voice-text').value.trim();
         const otpOnRegistration = document.getElementById('settings-otp-registration').checked;
         const otpMethod = document.getElementById('settings-otp-method').value;
         const emailScriptUrl = document.getElementById('settings-email-script-url').value.trim();
@@ -561,7 +523,12 @@ const app = {
             startTime,
             gracePeriod,
             voiceEnabled,
-            livenessEnabled,
+            soundEnabled,
+            soundType,
+            voiceName,
+            voiceRate,
+            voicePitch,
+            voiceText,
             otpOnRegistration,
             otpMethod,
             emailScriptUrl,

@@ -193,10 +193,7 @@
                             <div class="scan-bracket bl"></div>
                             <div class="scan-bracket br"></div>
                         </div>
-                        <!-- Liveness Progress Bar -->
-                        <div class="liveness-progress-bar hidden" id="liveness-bar">
-                            <div class="liveness-progress-fill" id="liveness-fill"></div>
-                        </div>
+
                         <div class="scan-status">
                             <div class="status-dot" id="scan-dot"></div>
                             <span id="scan-message">Initializing...</span>
@@ -291,13 +288,56 @@
                             <div class="settings-group flex-row">
                                 <div class="switch-container">
                                     <label class="switch-label">Voice Announcement</label>
-                                    <input type="checkbox" id="settings-voice" class="form-switch">
+                                    <input type="checkbox" id="settings-voice" class="form-switch" onchange="ui.toggleVoiceSettingsFields()">
                                 </div>
                             </div>
                             <div class="settings-group flex-row">
                                 <div class="switch-container">
-                                    <label class="switch-label">Blink Liveness Verification</label>
-                                    <input type="checkbox" id="settings-liveness" class="form-switch">
+                                    <label class="switch-label">Audio Sound Effects</label>
+                                    <input type="checkbox" id="settings-sound-enabled" class="form-switch" onchange="ui.toggleVoiceSettingsFields()">
+                                </div>
+                            </div>
+                            <div id="voice-settings-wrapper" class="settings-group full-width hidden" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border); padding: 20px; border-radius: 12px; margin-top: 10px; margin-bottom: 10px;">
+                                <h4 style="margin-bottom: 15px; color: var(--text-main); display: flex; align-items: center; gap: 8px;">
+                                    🔊 Voice & Audio Settings
+                                </h4>
+                                <div class="settings-grid">
+                                    <div class="settings-group" id="sound-type-wrapper">
+                                        <label>Sound Effect Tone</label>
+                                        <select id="settings-sound-type" class="form-control">
+                                            <option value="beep">High-Tech Double Beep</option>
+                                            <option value="chime">Modern Triple Chime</option>
+                                        </select>
+                                    </div>
+                                    <div class="settings-group" id="voice-select-wrapper">
+                                        <label>Announcement Voice (Indian English Preferred)</label>
+                                        <select id="settings-voice-select" class="form-control">
+                                            <!-- Loaded dynamically -->
+                                        </select>
+                                    </div>
+                                    <div class="settings-group">
+                                        <label>Voice Speed/Rate: <span id="settings-voice-rate-val" style="color:var(--accent)">1.0</span>x</label>
+                                        <input type="range" id="settings-voice-rate" min="0.5" max="2.0" step="0.1" value="1.0" class="form-control" style="padding: 6px 12px;" oninput="document.getElementById('settings-voice-rate-val').innerText = this.value">
+                                    </div>
+                                    <div class="settings-group">
+                                        <label>Voice Pitch: <span id="settings-voice-pitch-val" style="color:var(--accent)">1.0</span></label>
+                                        <input type="range" id="settings-voice-pitch" min="0.5" max="2.0" step="0.1" value="1.0" class="form-control" style="padding: 6px 12px;" oninput="document.getElementById('settings-voice-pitch-val').innerText = this.value">
+                                    </div>
+                                    <div class="settings-group full-width">
+                                        <label>Announcement Message Template</label>
+                                        <input type="text" id="settings-voice-text" class="form-control" placeholder="e.g. Attendance marked for {name}">
+                                        <span style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">Use <code>{name}</code> as a placeholder for the student's name.</span>
+                                    </div>
+                                    <div class="settings-group full-width mt-10">
+                                        <div class="d-flex" style="gap: 12px;">
+                                            <button type="button" class="btn btn-secondary" onclick="ui.testVoiceAnnouncement()" style="display:flex; align-items:center; gap:6px;">
+                                                <span>🗣</span> Test Voice Settings
+                                            </button>
+                                            <button type="button" class="btn btn-secondary" onclick="ui.testSoundEffect()" style="display:flex; align-items:center; gap:6px;">
+                                                <span>🔔</span> Test Audio Effect
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="settings-group flex-row">
